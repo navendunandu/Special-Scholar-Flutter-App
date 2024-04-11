@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "410746951184",
+    "project_id": "special-scholar",
+    "storage_bucket": "special-scholar.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:410746951184:android:279605bf7a36a8c6491c95",
+        "android_client_info": {
+          "package_name": "com.example.special_scholar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrYjW6C1AnrleckmslvGMCoCea3atjZZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
