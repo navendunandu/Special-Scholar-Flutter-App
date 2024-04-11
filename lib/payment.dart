@@ -1,7 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class PaymentPage extends StatefulWidget {
+  final String id;
+
+  const PaymentPage({super.key, required this.id});
   @override
   _PaymentPageState createState() => _PaymentPageState();
 }
@@ -17,6 +22,56 @@ class _PaymentPageState extends State<PaymentPage> {
   final _cardHolderController = TextEditingController();
   final _cvvController = TextEditingController();
   final _expiryDateController = TextEditingController();
+  int? amount = 0;
+
+  Future<void> fetchData() async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> docSnapshot =
+          await FirebaseFirestore.instance
+              .collection('tbl_request')
+              .doc(widget.id)
+              .get();
+
+      if (docSnapshot.exists) {
+        // Document with the specified ID exists
+        setState(() {
+          amount = docSnapshot.get('request_amount');
+        });
+      }
+    } catch (e) {
+      print('Error fetching request data: $e');
+    }
+  }
+
+  Future<void> payment() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('tbl_request')
+            .doc(widget.id)
+            .update({'request_status': 3});
+        Fluttertoast.showToast(
+          msg: "Payment Successful",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
+        Navigator.pop(context);
+      } catch (e) {
+        print('Error updating request status: $e');
+        Fluttertoast.showToast(
+          msg: "Payment Failed",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+        Navigator.pop(context);
+        // You can handle the error accordingly
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -25,6 +80,12 @@ class _PaymentPageState extends State<PaymentPage> {
     _expiryDateController.dispose();
     _cardHolderController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
   }
 
   @override
@@ -37,143 +98,138 @@ class _PaymentPageState extends State<PaymentPage> {
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Enter Card Details',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Payable Amount: $amount'),
+                SizedBox(
+                  height: 10,
                 ),
-              ),
-              SizedBox(height: 20),
-              TextFormField(
-                controller: _cardHolderController,
-                decoration: InputDecoration(
-                  labelText: 'Card Holder Name',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.name,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter card holder name';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _cardNumber = value;
-                },
-              ),
-              SizedBox(height: 20),
-              TextFormField(
-                controller: _cardNumberController,
-                decoration: InputDecoration(
-                  labelText: 'Card Number',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(16),
-                  _CardNumberFormatter(),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter card number';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _cardNumber = value;
-                },
-              ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: _expiryDateController,
-                      decoration: InputDecoration(
-                        labelText: 'Expiration Date (mm/yyyy)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.datetime,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        _ExpiryDateFormatter(),
-                        LengthLimitingTextInputFormatter(7),
-                      ],
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter expiration date';
-                        }
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _expiryDate = value;
-                      },
-                    ),
+                Text(
+                  'Enter Card Details',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(width: 20),
-                  Expanded(
-                    flex: 1,
-                    child: TextFormField(
-                      controller: _cvvController,
-                      decoration: InputDecoration(
-                        labelText: 'CVV',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(3),
-                      ],
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter CVV';
-                        }
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _cvv = value;
-                      },
-                    ),
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _cardHolderController,
+                  decoration: InputDecoration(
+                    labelText: 'Card Holder Name',
+                    border: OutlineInputBorder(),
                   ),
-                ],
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  _submitPayment();
-                },
-                child: Text('Submit Payment'),
-              ),
-            ],
+                  keyboardType: TextInputType.name,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter card holder name';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) {
+                    _cardNumber = value;
+                  },
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _cardNumberController,
+                  decoration: InputDecoration(
+                    labelText: 'Card Number',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(16),
+                    _CardNumberFormatter(),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter card number';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) {
+                    _cardNumber = value;
+                  },
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: _expiryDateController,
+                        decoration: InputDecoration(
+                          labelText: 'Expiration Date (mm/yyyy)',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.datetime,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          _ExpiryDateFormatter(),
+                          LengthLimitingTextInputFormatter(7),
+                        ],
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter expiration date';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _expiryDate = value;
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 20),
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        controller: _cvvController,
+                        decoration: InputDecoration(
+                          labelText: 'CVV',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(3),
+                        ],
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter CVV';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _cvv = value;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    payment();
+                  },
+                  child: Text('Submit Payment'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-
-  void _submitPayment() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      // Implement payment functionality
-      // This is just a placeholder
-      print('Payment submitted');
-      print('Card Number: $_cardNumber');
-      print('Expiration Date: $_expiryDate');
-      print('CVV: $_cvv');
-    }
-  }
 }
 
 class _CardNumberFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
     var text = newValue.text;
     if (text.length <= 16) {
       var newText = '';
@@ -194,7 +250,8 @@ class _CardNumberFormatter extends TextInputFormatter {
 
 class _ExpiryDateFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
     var text = newValue.text;
     var newText = '';
     if (text.isNotEmpty && text.length <= 7) {
@@ -210,10 +267,4 @@ class _ExpiryDateFormatter extends TextInputFormatter {
       selection: TextSelection.collapsed(offset: newText.length),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: PaymentPage(),
-  ));
 }

@@ -150,7 +150,11 @@ class _TrainerdetailsState extends State<Trainerdetails> {
 
       // Get trainer ID and user ID from the trainerData
       String trainerId = widget.trainerData['trainer_id'];
-
+      QuerySnapshot trainerSnapshot = await FirebaseFirestore.instance
+        .collection('tbl_trainer')
+        .where('trainer_id', isEqualTo: widget.trainerData['trainer_id'])
+        .get();
+String tDoc = trainerSnapshot.docs.first.id;
       // Retrieve the user ID
       final user = FirebaseAuth.instance.currentUser;
       final userId = user?.uid;
@@ -166,7 +170,7 @@ class _TrainerdetailsState extends State<Trainerdetails> {
           'request_status': 0,
           'requestfrom_date': fromDate,
           'requestto_date': toDate,
-          'trainer_id': trainerId,
+          'trainer_id': tDoc,
           'user_id': uDoc,
           // Add other fields as needed
         });

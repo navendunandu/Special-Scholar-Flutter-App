@@ -158,11 +158,11 @@ class _TrainerrequestState extends State<Trainerrequest> {
     if (status == '0') {
       return 'Pending';
     } else if (status == '1') {
-      return 'Accepted';
+      return 'Make Payment';
     } else if (status == '2') {
       return 'Rejected';
     } else {
-      return 'Unknown';
+      return '';
     }
   }
 
@@ -232,13 +232,13 @@ class _TrainerrequestState extends State<Trainerrequest> {
                               onPressed: () {
                                 // Implement payment functionality
                                 // This is just a placeholder
-                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => PaymentPage(),));
+                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => PaymentPage(id: data['id'],),));
                                 print(
                                     'Payment button pressed for request ID: ${data['id']}');
                               },
                               child: Text('Pay'),
                             ),
-                          if (data['request_status'] == '0') // Accepted status
+                          if (data['request_status'] == '3') // Accepted status
                             ElevatedButton(
                               onPressed: () {
                                 Navigator.push(context, MaterialPageRoute(builder: (context) => RatingReviewScreen(id: data['id']),));
@@ -249,17 +249,17 @@ class _TrainerrequestState extends State<Trainerrequest> {
                               },
                               child: Text('Rating'),
                             ),
-                          IconButton(
-                            onPressed: () {
-                              // Delete trainer request
-                              FirebaseFirestore.instance
-                                  .collection('tbl_request')
-                                  .doc(data['id'])
-                                  .delete();
-                                  fetchTReqData();
-                            },
-                            icon: Icon(Icons.delete),
-                          ),
+                          if (data['request_status'] == '3') // Accepted status
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => RatingReviewScreen(id: data['id']),));
+                                // Implement view course functionality
+                                // This is just a placeholder
+                                print(
+                                    'View course button pressed for request ID: ${data['id']}');
+                              },
+                              child: Text('Course'),
+                            ),
                         ],
                       ),
                     ),

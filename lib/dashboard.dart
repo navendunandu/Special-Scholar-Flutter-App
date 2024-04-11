@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:special_scholar/SearchSchool.dart';
 import 'package:special_scholar/SearchTrainer.dart';
 import 'package:special_scholar/Trainerrequest.dart';
+import 'package:special_scholar/login.dart';
 import 'package:special_scholar/mychild.dart';
 import 'package:special_scholar/myprofile.dart';
 
@@ -13,6 +15,8 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,8 +80,8 @@ class _DashboardState extends State<Dashboard> {
             ListTile(
               title: const Text('Logout'),
               onTap: () {
-                // _auth.signOut();
-                // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Login(),));
+                _auth.signOut();
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Login(),));
               },
             ),
           ],
