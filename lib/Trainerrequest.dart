@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:special_scholar/course_videos.dart';
 import 'package:special_scholar/myprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:special_scholar/payment.dart';
@@ -46,6 +47,7 @@ class _TrainerrequestState extends State<Trainerrequest> {
             'requestfrom_date': doc['requestfrom_date'].toString(),
             'requestto_date': doc['requestto_date'].toString(),
             'trainer_name': trainerName,
+            'trainer_id':doc['trainer_id'].toString(),
           });
         }
 
@@ -252,7 +254,7 @@ class _TrainerrequestState extends State<Trainerrequest> {
                           if (data['request_status'] == '3') // Accepted status
                             ElevatedButton(
                               onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => RatingReviewScreen(id: data['id']),));
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => HowToVideos(id:data['trainer_id'] ),));
                                 // Implement view course functionality
                                 // This is just a placeholder
                                 print(

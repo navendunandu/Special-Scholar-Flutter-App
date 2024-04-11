@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:special_scholar/SearchSchool.dart';
 import 'package:special_scholar/SearchTrainer.dart';
 import 'package:special_scholar/Trainerrequest.dart';
+import 'package:special_scholar/feedback.dart';
 import 'package:special_scholar/login.dart';
 import 'package:special_scholar/mychild.dart';
+import 'package:special_scholar/mycomplaint.dart';
 import 'package:special_scholar/myprofile.dart';
+import 'package:special_scholar/postcomplaint.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -53,28 +56,28 @@ class _DashboardState extends State<Dashboard> {
             ListTile(
               title: const Text('Complaint'),
               onTap: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => const ComplaintScreen()),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ComplaintScreen()),
+                );
               },
             ),
             ListTile(
               title: const Text('Feedback'),
               onTap: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => const FeedbackScreen()),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FeedbackScreen()),
+                );
               },
             ),
             ListTile(
               title: const Text('My Complaints'),
               onTap: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => const ComplaintsPage()),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ComplaintsPage()),
+                );
               },
             ),
             ListTile(

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:special_scholar/dashboard.dart';
 import 'package:special_scholar/forgot_password.dart';
 import 'package:special_scholar/registration.dart';
@@ -19,35 +20,56 @@ class LoginState extends State<Login> {
   final _emailRegex = RegExp(
       r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
 
-  Future<void> Login() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        final FirebaseAuth auth = FirebaseAuth.instance;
+   Future<void> login() async {
+  try {
+    final FirebaseAuth auth = FirebaseAuth.instance;
 
-        await auth.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => const Dashboard()));
-      } catch (e) {
-        // Handle login failure and show an error toast.
-        String errorMessage = 'Login failed';
+    // Sign in with email and password
+    await auth.signInWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
 
-        if (e is FirebaseAuthException) {
-          errorMessage = e.code;
-        }
+    // Check if the user exists in the tbl_user collection
+    final userSnapshot = await FirebaseFirestore.instance
+        .collection('tbl_user')
+        .where('user_email', isEqualTo: _emailController.text.trim())
+        .get();
 
-        Fluttertoast.showToast(
-          msg: errorMessage,
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
+    // If no user found, show error message
+    if (userSnapshot.docs.isEmpty) {
+      Fluttertoast.showToast(
+        msg: 'Incorrect credentials',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+      return;
     }
+
+    // Navigate to Dashboard if login successful
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const Dashboard()),
+    );
+  } catch (e) {
+    // Handle login failure and show an error toast.
+    String errorMessage = 'Login failed';
+
+    if (e is FirebaseAuthException) {
+      errorMessage = e.code;
+    }
+
+    Fluttertoast.showToast(
+      msg: errorMessage,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +134,7 @@ class LoginState extends State<Login> {
                 height: 30,
               ),
               ElevatedButton(
-                onPressed: Login,
+                onPressed: login,
                 child: const Text('Login'),
               ),
               const SizedBox(
