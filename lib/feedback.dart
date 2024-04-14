@@ -15,12 +15,23 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   void _submitFeedback() async {
     if (_formKey.currentState!.validate()) {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId != null) {
+      final user = FirebaseAuth.instance.currentUser;
+    final userId = user?.uid;
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    QuerySnapshot studentSnapshot = await firestore
+        .collection('tbl_user')
+        .where('user_id', isEqualTo: userId)
+        .get();
+      if (studentSnapshot.docs.isNotEmpty) {
+        String uDoc = studentSnapshot.docs.first.id;
         final feedbackContent = _feedbackController.text.trim();
         try {
           await FirebaseFirestore.instance.collection('tbl_feedback').add({
-            'feedback': feedbackContent,
+            'feedback_content': feedbackContent,
+            'user_id':uDoc,
+            'school_id':'',
+            'trainer_id':'',
+            'feedback_date': FieldValue.serverTimestamp(),
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

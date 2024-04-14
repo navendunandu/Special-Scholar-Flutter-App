@@ -29,9 +29,11 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
           await FirebaseFirestore.instance.collection('tbl_complaint').add({
             'user_id': documentId,
             'complaint_content': complaintContent,
-            'date': FieldValue.serverTimestamp(),
-            'reply':"",
-            'status':0,
+            'complaint_data': FieldValue.serverTimestamp(),
+            'complaint_reply':"",
+            'complaint_status':0,
+            'school_id':'',
+            'trainer_id':''
           });
 
           ScaffoldMessenger.of(context).showSnackBar(

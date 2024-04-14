@@ -1,48 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 
-class FullScreenVideoPlayer extends StatefulWidget {
+class VideoPlayerPage extends StatefulWidget {
   final String videoUrl;
 
-  FullScreenVideoPlayer({required this.videoUrl});
+  VideoPlayerPage({required this.videoUrl});
 
   @override
-  _FullScreenVideoPlayerState createState() => _FullScreenVideoPlayerState();
+  _VideoPlayerPageState createState() => _VideoPlayerPageState();
 }
 
-class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
-  late ChewieController _chewieController;
-  late VideoPlayerController _videoPlayerController;
+class _VideoPlayerPageState extends State<VideoPlayerPage> {
+  late VideoPlayerController _controller;
 
   @override
   void initState() {
     super.initState();
-    _videoPlayerController = VideoPlayerController.network(widget.videoUrl);
-    _chewieController = ChewieController(
-      videoPlayerController: _videoPlayerController,
-      aspectRatio: _videoPlayerController.value.aspectRatio,
-      autoPlay: true,
-      looping: false,
-    );
+    _controller = VideoPlayerController.network(widget.videoUrl)
+      ..initialize().then((_) {
+        setState(() {});
+      });
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        await _videoPlayerController.pause();
-        await _videoPlayerController.dispose();
-        return true;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Full Screen Video'),
-        ),
-        body: Center(
-          child: Chewie(
-            controller: _chewieController,
-          ),
+    return Scaffold(
+      body: Center(
+        child: _controller.value.isInitialized
+            ? AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              )
+            : CircularProgressIndicator(),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            _controller.value.isPlaying
+                ? _controller.pause()
+                : _controller.play();
+          });
+        },
+        child: Icon(
+          _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
         ),
       ),
     );
@@ -50,8 +50,7 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
 
   @override
   void dispose() {
-    _videoPlayerController.dispose();
-    _chewieController.dispose();
     super.dispose();
+    _controller.dispose();
   }
 }

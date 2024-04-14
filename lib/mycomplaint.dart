@@ -72,9 +72,9 @@ class ComplaintsList extends StatelessWidget {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(data['status'] == 0 && data['reply'].isEmpty
+                      Text(data['complaint_status'] == 0 && data['complaint_reply'].isEmpty
                           ? 'Not reviewed by admin'
-                          : 'Reply:${data["reply"]}'),
+                          : 'Reply:${data["complaint_reply"]}'),
                     ],
                   ),
                 );
