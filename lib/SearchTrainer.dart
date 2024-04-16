@@ -15,8 +15,12 @@ class _SearchtrainerState extends State<Searchtrainer> {
   List<Map<String, dynamic>> trainers = []; // List to store trainer data
   List<Map<String, dynamic>> districts = [];
   List<Map<String, dynamic>> places = [];
+  List<Map<String, dynamic>> types = [];
+  List<Map<String, dynamic>> subtypes = [];
   String? selectedDistrict;
   String? selectedPlace;
+  String? selectedType;
+  String? selectedSubType;
   List<Map<String, dynamic>> originalTrainers = []; // Store the original list of trainers
 
   @override
@@ -24,6 +28,7 @@ class _SearchtrainerState extends State<Searchtrainer> {
     super.initState();
     fetchTrainers(); // Fetch trainers data when the widget is initialized
     fetchDistricts();
+    fetchType();
   }
 
   Future<void> fetchTrainers() async {
@@ -61,6 +66,26 @@ class _SearchtrainerState extends State<Searchtrainer> {
     }
   }
 
+  Future<void> fetchType() async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await FirebaseFirestore.instance.collection('tbl_type').get();
+
+      List<Map<String, dynamic>> temptypes = querySnapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                'name': doc['type_name'].toString(),
+              })
+          .toList();
+
+      setState(() {
+        types = temptypes;
+      });
+    } catch (e) {
+      print('Error fetching type data: $e');
+    }
+  }
+
   Future<void> fetchPlaceData(id) async {
     places = [];
     try {
@@ -85,11 +110,37 @@ class _SearchtrainerState extends State<Searchtrainer> {
     }
   }
 
+  Future<void> fetchSubtypeData(id) async {
+    print(id);
+    places = [];
+    try {
+      QuerySnapshot<Map<String, dynamic>> querySnapshot1 =
+          await FirebaseFirestore.instance
+              .collection('tbl_subtype')
+              .where('type_id', isEqualTo: id)
+              .get();
+
+      List<Map<String, dynamic>> place = querySnapshot1.docs
+          .map((doc) => {
+                'id': doc.id,
+                'name': doc['subtype_name'].toString(),
+              })
+          .toList();
+
+      setState(() {
+        subtypes = place;
+      });
+    } catch (e) {
+      print('Error fetching place data: $e');
+    }
+  }
+
   Future<void> searchTrainers() async {
     try {
       QuerySnapshot trainerSnapshot = await FirebaseFirestore.instance
           .collection('tbl_trainer')
           .where('place_id', isEqualTo: selectedPlace)
+          .where('subtype_id', isEqualTo: selectedSubType)
           .get();
 
       setState(() {
@@ -106,6 +157,8 @@ class _SearchtrainerState extends State<Searchtrainer> {
       trainers = originalTrainers;
       selectedDistrict = null;
       selectedPlace = null;
+      selectedType = null;
+      selectedSubType = null;
     });
   }
 
@@ -178,7 +231,6 @@ class _SearchtrainerState extends State<Searchtrainer> {
                       setState(() {
                         selectedPlace = newValue;
                       });
-                      searchTrainers();
                     },
                     isExpanded: true,
                     items: places.map<DropdownMenuItem<String>>(
@@ -196,9 +248,78 @@ class _SearchtrainerState extends State<Searchtrainer> {
                       return null;
                     },
                   ),
-                  ElevatedButton(
-                    onPressed: resetSearch,
-                    child: Text('Reset'),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: selectedType,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.document_scanner),
+                      labelText: 'Type',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (String? newValue) {
+                      fetchSubtypeData(newValue);
+                      setState(() {
+                        selectedType = newValue;
+                      });
+                    },
+                    isExpanded: true,
+                    items: types.map<DropdownMenuItem<String>>(
+                      (Map<String, dynamic> district) {
+                        return DropdownMenuItem<String>(
+                          value: district['id'],
+                          child: Text(district['name']),
+                        );
+                      },
+                    ).toList(),
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Please select a type';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.document_scanner),
+                      labelText: 'Sub Type',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: selectedSubType,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedSubType = newValue;
+                        searchTrainers();
+                      });
+                    },
+                    isExpanded: true,
+                    items: subtypes.map<DropdownMenuItem<String>>(
+                      (Map<String, dynamic> place) {
+                        return DropdownMenuItem<String>(
+                          value: place['id'],
+                          child: Text(place['name']),
+                        );
+                      },
+                    ).toList(),
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Please select a sub type';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(width: 10,),
+                      ElevatedButton(
+                        onPressed: resetSearch,
+                        child: Text('Reset'),
+                      ),
+                    ],
                   ),
                 ],
               ),

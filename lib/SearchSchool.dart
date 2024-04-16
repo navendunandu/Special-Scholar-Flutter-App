@@ -162,6 +162,7 @@ DropdownButtonFormField<String>(
                     setState(() {
                       selectedPlace = newValue;
                     });
+                    searchSchool();
                   },
                   isExpanded: true,
                   items: places.map<DropdownMenuItem<String>>(
@@ -179,9 +180,6 @@ DropdownButtonFormField<String>(
                     return null;
                   },
                 ),
-                ElevatedButton(onPressed: (){
-                  searchSchool();
-                }, child: Text('Search')),
                 SizedBox(
                   height: 10,
                 ),
