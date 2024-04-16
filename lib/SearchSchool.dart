@@ -12,6 +12,85 @@ class Searchschool extends StatefulWidget {
 }
 
 class _SearchschoolState extends State<Searchschool> {
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> schools = [];
+  String? selectedDistrict;
+  String? selectedPlace;
+
+  List<Map<String, dynamic>> districts = [];
+  List<Map<String, dynamic>> places = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSchools();
+    fetchDistricts();
+  }
+
+  Future<void> fetchSchools() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('tbl_school').where('school_status', isEqualTo: 1).get();
+    setState(() {
+      schools = snapshot.docs;
+    });
+  }
+
+  Future<void> searchSchool() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('tbl_school').where('place_id', isEqualTo: selectedPlace).where('school_status', isEqualTo: 1).get();
+    setState(() {
+      schools = snapshot.docs;
+    });
+  }
+
+  Future<void> fetchDistricts() async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await FirebaseFirestore.instance.collection('tbl_district').get();
+
+      List<Map<String, dynamic>> tempDistricts = querySnapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                'name': doc['district_name'].toString(),
+              })
+          .toList();
+
+      setState(() {
+        districts = tempDistricts;
+      });
+      print(tempDistricts);
+    } catch (e) {
+      print('Error fetching district data: $e');
+    }
+  }
+
+  
+
+  Future<void> fetchPlaceData(id) async {
+    places = [];
+    try {
+      // Replace 'tbl_course' with your actual collection name
+      QuerySnapshot<Map<String, dynamic>> querySnapshot1 =
+          await FirebaseFirestore.instance
+              .collection('tbl_place')
+              .where('district_id', isEqualTo: id)
+              .get();
+
+      List<Map<String, dynamic>> place = querySnapshot1.docs
+          .map((doc) => {
+                'id': doc.id,
+                'name': doc['place_name'].toString(),
+              })
+          .toList();
+
+      setState(() {
+        places = place;
+      });
+      print(place);
+    } catch (e) {
+      print('Error fetching place data: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,88 +112,153 @@ class _SearchschoolState extends State<Searchschool> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(5.0),
-        child: StreamBuilder<QuerySnapshot>(
-          stream:
-              FirebaseFirestore.instance.collection('tbl_school').snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            }
-
-            final schools = snapshot.data?.docs ?? [];
-
-            return ListView.builder(
-              itemCount: schools.length,
-              itemBuilder: (context, index) {
-                final schoolData =
-                    schools[index].data() as Map<String, dynamic>;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              SchoolDetails(schoolData: schoolData),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(20.0),
-                      width: 250,
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent,
-                        borderRadius: BorderRadius.circular(20.0),
-                      ),
-                      child: Row(
-                        children: [
-                          Image.network(
-                            schoolData['school_photo'] ??
-                                'https://via.placeholder.com/150',
-                            height: 150,
-                            width: 120,
-                            fit: BoxFit.cover,
-                          ),
-                          const SizedBox(width: 20),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  child: Text(
-                                    'School: ${schoolData?['school_name'] ?? 'Unknown'}',
-                                    overflow: TextOverflow.visible,
-                                    maxLines: 3,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Location: ${schoolData?['school_address'] ?? 'Unknown'}',
-                                  overflow: TextOverflow.visible,
-                                  maxLines: 3,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Contact: ${schoolData?['school_contact'] ?? 'Unknown'}',
-                                  overflow: TextOverflow.visible,
-                                  maxLines: 3,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+        child: Column(
+          children: [
+            Padding(padding: EdgeInsets.all(5),
+            child: Column(
+              children: [
+DropdownButtonFormField<String>(
+                  value: selectedDistrict,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.location_on),
+                    hintText: 'District',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: const BorderSide(
+                        color: Colors.blue,
                       ),
                     ),
                   ),
-                );
-              },
-            );
-          },
+                  onChanged: (String? newValue) {
+                    fetchPlaceData(newValue);
+                    setState(() {
+                      selectedDistrict = newValue;
+                    });
+                  },
+                  isExpanded: true,
+                  items: districts.map<DropdownMenuItem<String>>(
+                    (Map<String, dynamic> district) {
+                      return DropdownMenuItem<String>(
+                        value: district['id'],
+                        child: Text(district['name']),
+                      );
+                    },
+                  ).toList(),
+                  validator: (value) {
+                    if (value == null) {
+                      return 'Please select a district';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.location_on),
+                    labelText: 'Place',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: selectedPlace,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedPlace = newValue;
+                    });
+                  },
+                  isExpanded: true,
+                  items: places.map<DropdownMenuItem<String>>(
+                    (Map<String, dynamic> place) {
+                      return DropdownMenuItem<String>(
+                        value: place['id'],
+                        child: Text(place['name']),
+                      );
+                    },
+                  ).toList(),
+                  validator: (value) {
+                    if (value == null) {
+                      return 'Please select a place';
+                    }
+                    return null;
+                  },
+                ),
+                ElevatedButton(onPressed: (){
+                  searchSchool();
+                }, child: Text('Search')),
+                SizedBox(
+                  height: 10,
+                ),
+                ElevatedButton(onPressed: (){
+                  fetchSchools();
+                }, child: Text('Reset'))
+              ],
+            ),),
+            Expanded(
+              child: ListView.builder(
+                itemCount: schools.length,
+                itemBuilder: (context, index) {
+                  final schoolData = schools[index].data();
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SchoolDetails(schoolData: schoolData),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(20.0),
+                        width: 250,
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent,
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        child: Row(
+                          children: [
+                            Image.network(
+                              schoolData['school_photo'] ??
+                                  'https://via.placeholder.com/150',
+                              height: 150,
+                              width: 120,
+                              fit: BoxFit.cover,
+                            ),
+                            const SizedBox(width: 20),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    child: Text(
+                                      'School: ${schoolData['school_name'] ?? 'Unknown'}',
+                                      overflow: TextOverflow.visible,
+                                      maxLines: 3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Location: ${schoolData['school_address'] ?? 'Unknown'}',
+                                    overflow: TextOverflow.visible,
+                                    maxLines: 3,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Contact: ${schoolData['school_contact'] ?? 'Unknown'}',
+                                    overflow: TextOverflow.visible,
+                                    maxLines: 3,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -168,11 +312,9 @@ class _SchoolDetailsState extends State<SchoolDetails> {
 
   Future<void> insertRequestToFirestore() async {
     try {
-      // Format the selected dates
-
       // Get school ID from the schoolData
       String schoolId = widget.schoolData['school_id'];
-      
+
       // Retrieve the user ID
       final user = FirebaseAuth.instance.currentUser;
       final userId = user?.uid;
@@ -181,7 +323,7 @@ class _SchoolDetailsState extends State<SchoolDetails> {
           .collection('tbl_user')
           .where('user_id', isEqualTo: userId)
           .get();
-          String uDoc = userSnapshot.docs.first.id;
+      String uDoc = userSnapshot.docs.first.id;
 
       if (userId != null) {
         // Insert request data to Firestore
